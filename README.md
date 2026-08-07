@@ -35,12 +35,18 @@ survive you. Not whether it's competent — competent is the floor.
 
 ## Install
 
+In Claude Code:
+
 ```
-/plugin marketplace add Chaotic-X/claude-skills
+/plugin marketplace add https://github.com/Chaotic-X/claude-skills.git
 /plugin install my-goal
 ```
 
-Then, in Claude Code:
+> Use the full URL as written. The shorthand form `Chaotic-X/claude-skills` also works, but it
+> clones over SSH and will fail if you haven't set up GitHub SSH keys. The URL above uses HTTPS and
+> works for everyone.
+
+Then configure it for your machine:
 
 ```
 /my-goal-setup
