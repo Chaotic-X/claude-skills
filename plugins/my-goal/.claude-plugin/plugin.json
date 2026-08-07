@@ -1,0 +1,18 @@
+{
+  "name": "my-goal",
+  "description": "Turn a rambled desired outcome into one paste-ready /goal prompt for a fresh autonomous session, through a draft-first walkthrough where every inference is surfaced for confirm/correct.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Chaotic-X"
+  },
+  "homepage": "https://github.com/Chaotic-X/claude-skills/tree/main/plugins/my-goal",
+  "repository": "https://github.com/Chaotic-X/claude-skills",
+  "license": "MIT",
+  "keywords": [
+    "prompting",
+    "goals",
+    "autonomous",
+    "workflow",
+    "agents"
+  ]
+}

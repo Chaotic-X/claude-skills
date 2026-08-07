@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-skills",
+  "description": "Claude Code skills worth sharing",
+  "owner": {
+    "name": "Chaotic-X"
+  },
+  "plugins": [
+    {
+      "name": "my-goal",
+      "description": "Turn a rambled desired outcome into one paste-ready /goal prompt for a fresh autonomous session, through a draft-first walkthrough where every inference is surfaced for confirm/correct.",
+      "author": {
+        "name": "Chaotic-X"
+      },
+      "category": "productivity",
+      "source": "./plugins/my-goal",
+      "homepage": "https://github.com/Chaotic-X/claude-skills/tree/main/plugins/my-goal"
+    }
+  ]
+}
