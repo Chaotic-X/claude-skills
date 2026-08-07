@@ -17,8 +17,10 @@ Use their actual name in what you write; "the owner" is a placeholder for you, n
 Ground truth lives at `~/.claude/my-goal/environment.md` — delivery defaults, standing clauses, tool
 roster, model routing.
 
-**If that file does not exist, invoke the `my-goal-setup` skill first**, let it finish, then continue
-from Phase 1 with the ramble the user already gave you. Do not ask them to repeat themselves, and do
+**If that file does not exist, invoke the setup skill first**, let it finish, then continue from
+Phase 1 with the ramble the user already gave you. The skill is named `my-goal-setup` when installed
+into a skills directory, and `my-goal:my-goal-setup` when installed as a plugin — use whichever
+appears in your available-skills list. Do not ask them to repeat themselves, and do
 not try to run without a config — a goal prompt that names no real paths or tools is worthless.
 
 ## Process
