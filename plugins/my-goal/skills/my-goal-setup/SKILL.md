@@ -64,7 +64,8 @@ common case is one click, not typing.
    question what it's for: before declaring a goal done, the fresh session simulates *their* review
    and asks "would this survive them?" — so the name should be what they'd call themselves.
 2. **Plan tier — Max / Pro / API or other.** This changes the generated output more than any other
-   answer; see Step 3.
+   answer; see Step 3. It also sets the units `/my-goal` uses when it estimates what a goal will
+   cost to run — a fraction of a usage window for Max and Pro, a dollar band for per-token billing.
 3. **Where heavy deliverables land.** Offer detected candidates (external volumes, `~/Projects`,
    `~/Developer`). This is where builds, renders, and working files go.
 4. **Where notes and docs land.** Offer detected Obsidian vaults first if any exist, then
@@ -105,6 +106,12 @@ less, is context discipline, because usage limits bite sooner:
 may not be the `claude` CLI at all. Note that cost is per-token and direct, so the routing advice
 applies literally.
 
+**Fill the cost posture in the same pass.** `{{PLAN}}` is their answer; `{{BINDING_WINDOW}}` follows
+from it — `weekly (the 5-hour window rarely binds at this tier)` for Max, `5-hour (it binds well
+before the weekly one)` for Pro, `none — billed per token` for API or other. Leave **Watch level** at
+`relaxed`. Don't ask about it; a new install has no history of runs dying on a limit, and the comment
+in the template explains how to change it once they do.
+
 Universal, ships in all three: right-size the model to the job; prefer narrow finisher and gap-fill
 briefs ("these files exist, complete X, one closing pass") over from-scratch fleets, because
 scope-per-agent moves cost more than model tier does; and diagnose before escalating — an ambiguous
@@ -129,3 +136,6 @@ third one is fixed by a bigger model.
 - A tool roster listing things you never verified exist → `/my-goal` will name them in a prompt and
   the fresh session will fail reaching for them. Only record what the detection actually found.
 - Interrogating a new user through a long questionnaire → four questions, detected defaults, done.
+- Leaving `{{PLAN}}` or `{{BINDING_WINDOW}}` unfilled → `/my-goal` falls back to bare
+  light/moderate/heavy with no units, and nags them to re-run setup.
+- Asking them to set Watch level → they have no history yet. Default it and let the template explain.

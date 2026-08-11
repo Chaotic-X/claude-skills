@@ -35,6 +35,23 @@ done. Part 5 of the anatomy grades against "would {{OWNER_NAME}} ship this," nev
 <!-- Review gate is ON. To turn it off, delete the clause above — but then autonomous runs may
      publish without asking you first. -->
 
+## Cost posture
+
+Read by `/my-goal` to size the **Expect** block it prints after each generated prompt — a rough time
+band plus a burn band, so you can judge whether to launch now or phase the goal into two.
+
+- **Plan:** {{PLAN}}
+- **Binding window:** {{BINDING_WINDOW}}
+- **Watch level:** relaxed
+
+<!-- Watch level changes how the Expect block talks about an expensive goal.
+       relaxed         - report the band and move on.
+       watched closely - a heavy reading also warns the goal may not survive one
+                         window, and suggests splitting it into two goals.
+     Switch to `watched closely` if a run has ever died mid-flight on a usage or
+     spend limit. Add the dates when it happened — the estimate reads more
+     honestly with them. -->
+
 ## Model routing + context discipline (include in any agent-spawning prompt)
 
 {{TIER_BLOCK}}
