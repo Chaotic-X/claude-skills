@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "my-goal",
-      "description": "Turn a rambled desired outcome into one paste-ready /goal prompt for a fresh autonomous session, through a draft-first walkthrough where every inference is surfaced for confirm/correct.",
+      "description": "Turn a rambled desired outcome into one paste-ready /goal prompt for a fresh autonomous session, through a draft-first walkthrough where every inference is surfaced for confirm/change.",
       "author": {
         "name": "Chaotic-X"
       },

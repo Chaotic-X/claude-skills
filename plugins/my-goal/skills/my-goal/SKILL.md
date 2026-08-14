@@ -1,12 +1,12 @@
 ---
 name: my-goal
-description: Use when the user invokes /my-goal, says "turn this into a goal prompt" / "write me a goal prompt", rambles a desired outcome and asks for the prompt that will make it happen in a fresh session, or asks to resume or pick up a goal prompt they paused earlier. The deliverable is one paste-ready goal prompt, never the build itself — do NOT use when they want the thing built right now in this session.
+description: Use when the user invokes /my-goal, says "turn this into a goal prompt" / "write me a goal prompt", rambles a desired outcome and asks for the prompt that will make it happen in a fresh session, or asks to resume, restart, or abandon a goal prompt they started earlier. The deliverable is one paste-ready goal prompt, never the build itself — do NOT use when they want the thing built right now in this session.
 ---
 
 # Goal Prompt Writer (/my-goal)
 
 Turn the user's ramble into one exceptional goal prompt for a fresh autonomous session — through a
-draft-first walkthrough where every inference is surfaced for their confirm/correct. You are not
+draft-first walkthrough where every inference is surfaced for their confirm/change. You are not
 building the thing, and you are not interviewing them from scratch: you draft, they react.
 
 Throughout this skill, **the owner** means the person named in `~/.claude/my-goal/environment.md`.
@@ -15,7 +15,7 @@ Use their actual name in what you write; "the owner" is a placeholder for you, n
 ## Configuration
 
 Ground truth lives at `~/.claude/my-goal/environment.md` — delivery defaults, standing clauses, tool
-roster, model routing, cost posture.
+roster, model routing, cost posture, session retention.
 
 **If that file does not exist, invoke the setup skill first**, let it finish, then continue from
 Phase 1 with the ramble the user already gave you. The skill is named `my-goal-setup` when installed
@@ -23,35 +23,52 @@ into a skills directory, and `my-goal:my-goal-setup` when installed as a plugin 
 appears in your available-skills list. Do not ask them to repeat themselves, and do
 not try to run without a config — a goal prompt that names no real paths or tools is worthless.
 
-In-progress and paused walkthroughs live in `~/.claude/my-goal/sessions/`. Both paths sit beside
-`environment.md`, deliberately outside any version-numbered plugin directory, so updating the plugin
-never destroys the owner's config or their unfinished goals.
+In-progress, paused, and abandoned walkthroughs live in `~/.claude/my-goal/sessions/`. Both paths sit
+beside `environment.md`, deliberately outside any version-numbered plugin directory, so updating the
+plugin never destroys the owner's config or their unfinished goals.
 
 ## Process
 
-### Phase 0 — Unfinished goals
-Before anything else, check `~/.claude/my-goal/sessions/` for files whose `status:` is not
-`delivered`. Distinguish two kinds:
+### Phase 0 — Prune, then offer
+
+Before anything else, scan `~/.claude/my-goal/sessions/`.
+
+**First, prune.** Any file with `status: abandoned` whose `abandoned:` datestamp is older than the
+retention window gets deleted — and one line per deletion appended to
+`~/.claude/my-goal/sessions/_abandoned-ledger.md` first:
+
+```
+2026-09-13 · comfyui-style-sheets · started 2026-08-10, abandoned 2026-08-14 at 4/7 · file deleted
+```
+
+The window comes from the **Keep abandoned goals for** line in `environment.md`. If that line is
+absent — a config written before the field existed — use **30 days** and say nothing about it. If
+anything was pruned, report it in one line; if nothing was, say nothing. Never delete silently, and
+never delete without the ledger line landing first.
+
+**Then offer.** Files whose `status:` is neither `delivered` nor `abandoned`:
 
 - **paused** — the owner said `pause`.
 - **interrupted** — `in-progress` from a session that ended without delivering (context clear, crash).
 
 If any exist, offer them before starting fresh — one line each: slug, when, `position N/7`, and the
-one-line desire from part 1. The owner picks one or says they want a new goal. If none exist, say
-nothing about it and go straight to Phase 1.
+one-line desire from part 1. The owner picks one, says they want a new goal, or abandons one from the
+list. If none exist, say nothing about it and go straight to Phase 1.
 
 **Resuming is warm.** Restore the confirmed parts and position, then re-read `environment.md` (it may
 have changed) and re-run every check in the file's `## Verified` block. Anything that has vanished,
-moved, or been renamed is presented as a **correction** on the part that named it — which marks that
-part `stale` and ripples normally. Only then continue at `position`. A path verified last Monday is
-not a path verified today.
+moved, or been renamed is presented as a **change** on the part that named it — which marks that
+part `stale` and ripples normally. Only then continue at `position`, and flip `status` back to
+`in-progress` on the first write — a walkthrough actively in progress should never sit on disk marked
+`paused`. A path verified last Monday is not a path verified today.
 
 ### Phase 1 — Intake
 Accept the ramble as-is; voice-to-text tolerant (interpret intent over literal words: "Quad MD"
 means CLAUDE.md, "Netlefi" means Netlify). Read `~/.claude/my-goal/environment.md` once. Ask nothing
 yet. Open the session file with the ramble stored verbatim — slug it from the deliverable in two or
 three hyphenated words (`comfyui-style-sheets`, `rhune-landing-page`), so a list of paused goals is
-readable without opening any of them.
+readable without opening any of them. `position` reads `1` from the moment the file is opened,
+before Phase 2 has drafted anything.
 
 ### Phase 2 — Draft all 7 parts
 Draft every part of the anatomy below immediately, filling gaps with the most probable reading of the
@@ -72,42 +89,167 @@ Present the draft one part at a time, in order:
 
 ```
 ────────────────────────────────────────
-yes · adjust <what> · correct <what>
-back [n] · pause
+(y)es · (c)hange <what> · (b)ack [n]
+(r)estart · (p)ause · (a)bandon
 ```
 
 Every fact in the drafted prose that came from neither the ramble nor a verified check gets an
 Inferred line — no silent specifics. **Print the menu after every part**, identically, so the owner
 never has to remember what is available.
 
-**The five verbs.** What separates `adjust` from `correct` is the *source* of the change, not its
-size — and it changes what you do next:
+**The six verbs.**
 
-| Verb | Means | You do |
-|---|---|---|
-| `yes` | accept as drafted | mark `confirmed`, advance |
-| `adjust <what>` | your draft was a fair read, they want it different | patch in place, mark `confirmed: adjusted`, **no ripple**, advance |
-| `correct <what>` | one of your Inferred lines is **wrong** | fix the premise, mark `confirmed: corrected`, **run the ripple pass**, note if `environment.md` or your reading of the ramble is what was stale, advance |
-| `back [n]` | return to part n | set n to `awaiting`, rewind position; run the ripple pass after they change it |
-| `pause` | stop here | write `status: paused`, tell them the resume command, end the turn — no summary, no further questions |
+| Verb | Key | Means | You do |
+|---|---|---|---|
+| `yes` | `y` | accept as drafted | mark `confirmed`, advance |
+| `change <what>` | `c` | anything about this part should be different — naming another part routes to it | fix it, mark `confirmed: changed`, **run the ripple pass**, advance |
+| `back [n]` | `b` | return to an earlier part | ask which step unless they named one, set it to `awaiting`, rewind position; run the ripple pass after they change it |
+| `restart` | `r` | the opening statement itself was wrong | take a new ramble, clear all parts, back to position 1 |
+| `pause` | `p` | stop here, coming back | `status: paused`, tell them the resume command, end the turn |
+| `abandon` | `a` | stop here, not coming back | confirm first, then `status: abandoned`, end the turn |
+
+**A key opens the action; it does not fire it.** `y` and `p` are the only ones that complete on
+their own — a yes has no follow-up question, and a pause has nothing to ask. Every other key asks the
+question its verb implies and waits: `c` asks what's wrong, `b` asks which step
+they're going back to, `r` asks for the new opening statement, `a` asks them to confirm and names
+what will be lost. A single keystroke never destroys work.
+
+**One character is a shortcut; anything longer is prose.** A lone `c` selects change. "change the
+resources part" is prose — parse it and act. "can we make it warmer" is prose that *infers* to
+change. The one-character rule is the only thing keeping those from colliding, so apply it strictly:
+if the reply is longer than one character, read it for meaning, never for its first letter.
+
+**Unmapped keys get a guess, never silence.** A bare `n` is not in the map, but it plainly means
+something is wrong — come back with "reading that as *something's wrong* — what is it?" rather than
+nothing. Same for any other stray character: name your best reading of it and ask. The owner should
+never type something and get no acknowledgement that they typed it.
+
+**Ambiguous prose never resolves to a destructive verb.** "cancel this", "forget it", "never mind"
+and their cousins can mean *abandon the goal* or *disregard what I just typed*. When a reading could
+be `abandon` and could be something smaller, ask which. Guessing generously is right everywhere else
+in this skill and wrong here — this is the one verb that cannot be undone.
 
 **The keywords are optional.** Infer the verb from what they actually say. "No, it's ToT not SoO" is
-a correct; "make it warmer" is an adjust; "go back to the resources part" is a back. The menu names
-categories, not a syntax they must obey — this skill is voice-to-text tolerant everywhere else and
-the menu is no exception.
+a change; "make it warmer" is a change; "go back to the resources part" is a back; "forget this
+whole thing" is an abandon. The menu names categories, not a syntax they must obey — this skill is
+voice-to-text tolerant everywhere else and the menu is no exception.
 
-**Ripple pass** (after any correct, or after a back-edit): re-draft every part downstream of the one
-that changed, diff each against the text already confirmed, and mark only the ones that *materially
-moved* as `stale`. Re-present the stale parts in order, labeled with what caused the change.
-Parts that did not move keep their confirmation and are never shown again. Never silently revise a
-part the owner already confirmed.
+**Ripple pass** (after any change, or after a back-edit). **Scope it first:** a downstream part
+ripples only if it actually depends on what changed — it names the fact, rests on it, or was drafted
+from it. Parts with no dependency are skipped without re-drafting. A wording tweak must not cost six
+re-drafts. Then, for the parts that do depend on it, re-draft and diff each against the text already
+confirmed, and mark only the ones that *materially moved* as `stale`. Re-present the stale parts in
+order, labeled with what caused the change. Parts that did not move keep their confirmation and are
+never shown again. Never silently revise a part the owner already confirmed. The diff is what
+decides — the owner classifies nothing.
+
+**On a first forward pass there is nothing downstream to protect.** Parts ahead of the current one
+are unpresented drafts, not commitments. **Confirmation, not presentation, is what earns ceremony** —
+a part the owner has seen but not confirmed (they backed away from it, or a change aimed at it was
+refused) is still a draft. Re-draft them on the changed premise silently and carry
+on to the next part — no diffing, no `stale` markers, no re-presenting. The ripple's ceremony exists
+for parts the owner has already confirmed, which in practice means changes reached through
+`back`.
+
+**An explicit "only this" suppresses the ripple.** If the owner says "just change this word, don't
+touch anything else," they win: patch in place and advance. They are allowed to override the diff —
+they are simply never *required* to classify for it. **Record the suppression on that part in the
+session file.** A later change that ripples into the same part must preserve the wording the owner
+protected, or say plainly that it could not — otherwise "nothing else" holds only until something
+else happens to reach it.
+
+**The ripple runs forward; contradictions do not.** A change can invalidate a part *earlier* than the
+one being edited — a change to 2 that redefines the deliverable leaves part 1's stakes describing
+something else — and the ripple, which only ever flows downstream, will never catch it. So check
+upstream by hand: after any change, re-read the confirmed parts behind the cursor and ask whether the
+new premise still fits them. If one no longer holds, say so and offer a `back` to it. A goal prompt
+whose parts 1 and 2 disagree is worse than one that asked a question.
+
+**`back` always establishes its destination before it moves.** Pressing `b` prints the parts *behind*
+the cursor — only those, since parts ahead are unpresented drafts and not destinations — on one line,
+in the menu's own idiom:
+
+```
+back to: (1) desire · (2) quality bar · (3) resources · (4) freedom
+```
+
+No status tags. Everything behind the cursor is confirmed by definition, so they would be ink without
+information. A reply that already names a part (`b 2`, "back to the resources part") has answered the
+question; take it and go. Never rewind to a part the owner didn't name.
+
+**`back` leaves the parts in between exactly as they are** — confirmed, and still confirmed. Going
+5→2 does not un-confirm 3 and 4; they are re-drafted only if the ripple from part 2 actually reaches
+them. Don't discard them, don't de-confirm them, and don't re-present them on the way back down. When
+the ripple finishes, the cursor returns to the frontier — the furthest part the owner had reached —
+not to the part they backed into.
+
+**A lone `c` is scoped to the part on screen; prose that names another part is routed.** The key
+itself names nothing, so the part in front of them is the only thing it could mean — a bare `c` never
+reaches backward. Prose is different: it can carry a destination, and this skill already reads
+anything longer than one character for meaning rather than for its first letter.
+
+**Route only when the naming resolves to exactly one part.** That is what "establishes a destination"
+means throughout this skill — one unambiguous referent, not the owner's confirmation. "change the
+quality bar" names part 2 and nothing else, so route it. Naming loose enough that two parts could
+answer to it is *not* established: print the `back` picker and let them point, rather than committing
+to your own parse and announcing a guess as though it were a fact. And when the part they name is the
+one already on screen, there is nothing to route — make the change where you are, with no
+announcement about going anywhere.
+
+When it does resolve, announce the move in one line before you make it, the same way every time:
+
+> That's 3/7 — going back.
+
+Then apply the change there and ripple forward. **If the prose named a destination but carried no
+edit** — "change the resources part", and nothing else — route and announce, then ask what should
+change once you are there. Never invent the edit to save a turn.
+
+Afterward the cursor returns to the frontier, the furthest part the owner had reached — but **stale
+parts come first.** Anything the ripple invalidated is re-presented and resolved before the frontier
+is restored; you cannot be standing at the frontier with a broken part behind you. Announce, never
+teleport silently, and never make the owner rephrase something you already understood.
 
 **Fatigue valve:** "rest looks good", "skip to the end", or anything similar batch-confirms
 everything remaining — jump straight to Phase 4 with zero further questions.
 
-**After every confirmed part, write the session file** (schema below) before presenting the next one.
-The file is the source of truth for `back`, `pause`, `resume`, and the ripple diff — not your memory
-of the conversation.
+**Write the session file after every state change** (schema below) — a confirmed part, a `back`, a
+restart, a pause, an abandon — before presenting anything else. Open it in Phase 1 with the ramble,
+and write it again at the end of Phase 2 with the drafts and the `## Verified` block, so a crash
+before the first confirmation still leaves something to resume from. The file is the source of truth
+for `back`, `pause`, `restart`, `resume`, and the ripple diff — not your memory of the
+conversation.
+
+### Restart
+
+`restart` is for when the **premise** was wrong — not one part, the whole opening statement. It
+discards every confirmed part, so when any are confirmed it names the loss first — "3 of 7 parts
+confirmed will be cleared — restart?" — the same courtesy `abandon` gets. With nothing confirmed yet
+there is nothing to lose: just go. Then ask for the new or revised statement and, in the same session
+file:
+
+1. Append the old ramble to a `## Superseded rambles` section with a timestamp. Never delete it — it
+   is how a warm resume months later understands what changed and why.
+2. Replace `## Ramble` with the new statement, verbatim.
+3. Clear every part, reset `position: 1`, and keep the `## Verified` block only where the checks
+   still apply to the new premise — re-run anything you are unsure of.
+4. Re-slug and rename the file if the deliverable changed. Same goal, new premise, one file.
+
+Then re-draft all 7 from scratch and present 1/7. A restart is not a change and does not ripple —
+there is nothing downstream left to ripple into.
+
+### Abandon
+
+`abandon` ends a goal for good. Like `restart` it destroys confirmed work, and unlike `restart` there
+is nothing left standing afterward — so it **confirms first**: name what
+will be lost — "4 of 7 parts confirmed — abandon it?" — and wait for a yes. Count the actual
+confirmed parts; that number is computed every time, never the literal 4. On confirm:
+
+1. Write `status: abandoned` and an `abandoned:` datestamp into the frontmatter.
+2. Tell them it will be kept for the retention window and then deleted automatically.
+3. End the turn. No summary, no salvage offer, no asking what went wrong.
+
+Abandoned goals are never offered at Phase 0. `a` works anywhere: mid-walkthrough, or on a paused
+goal offered in the Phase 0 list.
 
 ### Phase 4 — Assemble + deliver
 Weave the confirmed parts into flowing first-person prose (the owner speaking to the fresh session),
@@ -123,7 +265,7 @@ Weave the confirmed parts into flowing first-person prose (the owner speaking to
    parts are confirmed facts, not assumptions.
 
 Nothing else. Then mark the session file `status: delivered` and leave it in place; delivered goals
-are the owner's record of what they have asked for before.
+are the owner's record of what they have asked for before, and they never age out.
 
 ## The Expect block
 
@@ -170,12 +312,16 @@ is already spent today. Do not imply otherwise.
 goal: comfyui-style-sheets
 started: 2026-08-10T16:52-06:00
 updated: 2026-08-10T17:20-06:00
-status: in-progress          # in-progress | paused | delivered
+status: in-progress          # in-progress | paused | delivered | abandoned
 position: 5                  # part currently awaiting confirm
+abandoned:                   # datestamp, only when status is abandoned
 ---
 
 ## Ramble
-<the original ramble, verbatim — never rewritten, even after corrections>
+<the current ramble, verbatim — never rewritten by a change; replaced only by a restart>
+
+## Superseded rambles
+<older rambles a restart replaced, each with the time it was superseded>
 
 ## Verified
 - /Volumes/x8/Claude_Resource_Dir/Alex/ — exists (16:55)
@@ -183,19 +329,22 @@ position: 5                  # part currently awaiting confirm
 
 ## Parts
 
-### 2 — Quality bar  [confirmed: corrected]
+### 2 — Quality bar  [confirmed: changed]
 <drafted prose>
 Inferred:
 - style-locked across the set — CONFIRMED
-Correction: "ToT not SoO" -> premise fixed, rippled to 5
+Change: "ToT not SoO" -> premise fixed, rippled to 5
 
 ### 5 — Verification loop  [awaiting]
 <drafted prose>
 ```
 
-Per-part status is one of `awaiting`, `confirmed`, `confirmed: adjusted`, `confirmed: corrected`,
-`stale`. Keep the ramble verbatim — it is what a warm resume re-reads when the confirmed parts are
-days old.
+Per-part status is one of `awaiting`, `confirmed`, `confirmed: changed`, `stale`.
+
+**Reading older files.** Sessions written before v1.2.0 may carry `confirmed: adjusted` (from when
+`adjust` was a separate verb) or `confirmed: corrected` (from when `change` was called `correct`).
+Read either as `confirmed` and carry on — do not rewrite the marker, and do not treat it as an error.
+Those files resume normally.
 
 ## The 7-part anatomy
 
@@ -224,9 +373,11 @@ days old.
    short. **In the walkthrough, 5/7 presents the actual planned test — artifact, checks, failure bar
    — so the owner confirms the test itself; this is where check-your-work ambiguity dies.**
 6. **Delivery + review gate** — exactly where results land (environment defaults unless the ramble
-   names a destination). If the output is public-facing (deploy, publish, post, send): the prompt
-   requires preview links/files for the owner's review and forbids autonomous publishing — verbatim
-   clause in `environment.md`.
+   names a destination). If the output leaves the machine or reaches another person (deploy, publish,
+   post, send), or overwrites something the owner cannot easily get back (editing originals in place,
+   bulk renames across a real archive): the prompt requires preview links/files for the owner's
+   review and forbids autonomous publishing or destructive writes — verbatim clause in
+   `environment.md`.
 7. **Goal line + autonomy + blocked-path + model routing** — restate the deliverable as one sentence:
    "[X with Y and Z] is your goal." Then the autonomy directive with the blocked-path clause from
    `environment.md` verbatim. Parallelization nudge only when the job is genuinely parallel (many
@@ -241,10 +392,29 @@ days old.
 - An assumption in the final prompt that never appeared on an Inferred: line → back it out or surface
   it.
 - Asking the owner questions before a draft exists → draft first; they react, they don't generate.
-- A part presented without the menu under it → they lose `back` and `pause` without knowing it.
+- A part presented without the menu under it → they lose `back`, `restart`, `pause` and `abandon`
+  without knowing it.
 - Demanding the literal keyword when they clearly meant a verb → infer it and move on.
-- Treating a correction like an adjustment → a wrong premise that never ripples poisons every part
-  drafted on top of it.
+- Reading a multi-character reply by its first letter → "change" is not `c`, and "back to what you
+  said about resources" is not `b`. One character, or it's prose.
+- `abandon` firing on the keystroke without a confirm → it is the only verb that destroys work.
+- A `change` that lands on another part without announcing the move → silent navigation is the thing
+  to avoid, not navigation itself. One line, then go.
+- Refusing a request whose destination and edit you are both holding → that is a tool correcting the
+  owner's grammar. Route it and say so.
+- Routing on naming that two parts could answer to → an announced guess is still a guess. Print the
+  picker instead.
+- Inventing the edit when prose named a destination but carried no content → route, then ask.
+- Returning to the frontier while a stale part sits unresolved behind it → stale first, always.
+- Reading ambiguous prose ("cancel this") as `abandon` without asking → generous inference is right
+  everywhere else and wrong on the one irreversible verb.
+- Rippling a part that doesn't depend on what changed → a wording tweak costing six re-drafts is how
+  the walkthrough gets long enough that the owner reaches for the fatigue valve.
+- Re-presenting downstream parts on a first forward pass → they were never confirmed; there is
+  nothing to protect and nothing to re-confirm.
+- A resumed goal left marked `paused` on disk → the file is the source of truth, and it is lying.
+- A restart that discards the old ramble → `## Superseded rambles` is how a resume understands what
+  changed.
 - Re-presenting parts the ripple pass didn't actually change → the point of the diff is that they
   confirm each thing once.
 - Continuing a resumed goal without re-running the `## Verified` checks → you are naming Monday's

@@ -28,9 +28,10 @@ done. Part 5 of the anatomy grades against "would {{OWNER_NAME}} ship this," nev
 - **Blocked-path:** "If you hit something you genuinely cannot resolve — a missing credential, a
   broken dependency, a decision only I can make — stop and report what's blocking you rather than
   working around it or declaring it done."
-- **Review gate** (only when output is public-facing): "Anything that would go public — a deploy, a
-  post, an email, a publish — comes to me as a preview for review first. Do not push, post, publish,
-  or send anything yourself."
+- **Review gate** (only when output leaves this machine): "Anything that would go public or reach
+  another person — a deploy, a post, an email to someone else, a publish — comes to me as a preview
+  for review first. Do not push, post, publish, or send anything yourself. Writing a file for me, or
+  sending something only to me, is not publishing."
 
 <!-- Review gate is ON. To turn it off, delete the clause above — but then autonomous runs may
      publish without asking you first. -->
@@ -51,6 +52,16 @@ band plus a burn band, so you can judge whether to launch now or phase the goal 
      Switch to `watched closely` if a run has ever died mid-flight on a usage or
      spend limit. Add the dates when it happened — the estimate reads more
      honestly with them. -->
+
+## Session retention
+
+- **Keep abandoned goals for:** 30 days
+
+<!-- Abandon a goal and its session file is kept this long, then deleted automatically during the
+     next /my-goal run — leaving one line in sessions/_abandoned-ledger.md as the record that it
+     existed. Paused and in-progress goals are never pruned. Delivered goals are kept forever;
+     they are your record of what you have asked for before.
+     Change the number freely. If this line is missing entirely, /my-goal falls back to 30 days. -->
 
 ## Model routing + context discipline (include in any agent-spawning prompt)
 

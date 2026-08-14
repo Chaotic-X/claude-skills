@@ -10,7 +10,7 @@ miss.
 
 `/my-goal` writes that prompt for you. You ramble; it drafts a complete goal prompt across seven
 parts, then walks you through them one at a time — showing you every assumption it made so you can
-correct it before the assumption gets baked in. What comes out is one paste-ready prompt, on your
+change it before the assumption gets baked in. What comes out is one paste-ready prompt, on your
 clipboard, for a fresh session to execute autonomously.
 
 It does not build the thing. It writes the prompt that makes building it go well.
@@ -66,6 +66,26 @@ is fine; it's built to interpret intent over literal words.
 
 If you skip setup and run `/my-goal` first, it'll run setup for you and then carry on. Nothing is
 lost.
+
+### While it's walking you through
+
+After every part you get the same menu. `y` and `p` act immediately; the other four open the action
+and ask you something first, so nothing destructive ever happens on a single keystroke.
+
+```
+(y)es · (c)hange <what> · (b)ack [n]
+(r)estart · (p)ause · (a)bandon
+```
+
+`change` covers anything you want different about the part in front of you, from a wrong assumption
+to "make it warmer". `back` returns to an earlier part — press it bare and it shows you which ones
+you can reach. `restart` rebuilds the whole thing from a new opening statement, for when the premise
+was wrong rather than one part. `pause` stops and keeps your place; resume whenever. `abandon` ends a
+goal for good — it confirms first, then keeps the file for 30 days by default before deleting it,
+leaving one line as the record.
+
+You never have to use the keywords. Plain speech lands where you'd expect: "make it warmer", "go back
+to the resources part", "forget this whole thing".
 
 ## Your configuration
 
