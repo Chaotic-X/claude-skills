@@ -106,6 +106,11 @@ less, is context discipline, because usage limits bite sooner:
 may not be the `claude` CLI at all. Note that cost is per-token and direct, so the routing advice
 applies literally.
 
+**Session retention ships pre-filled.** The template carries `Keep abandoned goals for: 30 days`
+with a comment explaining it. Don't ask — same reasoning as Watch level: a new install has no
+abandoned goals to have an opinion about, and the comment tells them how to change it. Just name it
+in the Step 4 summary so they know it exists.
+
 **Fill the cost posture in the same pass.** `{{PLAN}}` is their answer; `{{BINDING_WINDOW}}` follows
 from it — `weekly (the 5-hour window rarely binds at this tier)` for Max, `5-hour (it binds well
 before the weekly one)` for Pro, `none — billed per token` for API or other. Leave **Watch level** at
@@ -122,7 +127,7 @@ third one is fixed by a bigger model.
 
 1. `mkdir -p ~/.claude/my-goal` and write `environment.md`.
 2. Summarize in plain language what you recorded — the name, the two directories, the tier, the tools
-   you found. Six lines, not a wall.
+   you found, and that abandoned goals are kept 30 days by default. Six lines, not a wall.
 3. Tell them the file is theirs to edit freely, that `/my-goal` never needs changing when it does,
    and that plugin updates won't touch it.
 4. Offer a smoke test: "give me a one-line description of something you want built and I'll run
@@ -139,3 +144,6 @@ third one is fixed by a bigger model.
 - Leaving `{{PLAN}}` or `{{BINDING_WINDOW}}` unfilled → `/my-goal` falls back to bare
   light/moderate/heavy with no units, and nags them to re-run setup.
 - Asking them to set Watch level → they have no history yet. Default it and let the template explain.
+- Asking them how long to keep abandoned goals → same answer. It ships at 30 days with a comment.
+- Dropping the retention line from the written config → `/my-goal` then falls back to 30 days
+  silently, which is right, but the owner never learns the setting exists.
