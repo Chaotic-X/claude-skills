@@ -1,7 +1,7 @@
 {
   "name": "my-goal",
   "description": "Turn a rambled desired outcome into one paste-ready /goal prompt for a fresh autonomous session, through a draft-first walkthrough where every inference is surfaced for confirm/change.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "Chaotic-X"
   },

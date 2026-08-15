@@ -177,6 +177,21 @@ No status tags. Everything behind the cursor is confirmed by definition, so they
 information. A reply that already names a part (`b 2`, "back to the resources part") has answered the
 question; take it and go. Never rewind to a part the owner didn't name.
 
+**The candidate picker is not the `back` picker.** `back` moves backward, so its picker offers only
+what sits behind the cursor. Disambiguation asks a different question — *which part did you mean* —
+and the answer can be the part on screen, which is often the strongest reading. So list the parts
+that genuinely answer to the phrasing, wherever they sit, and mark the current one:
+
+```
+did you mean: (2) quality bar · (5) verification loop — on screen now
+```
+
+**Never print a picker that omits a live candidate.** A picker whose options steer away from the most
+likely reading is worse than the guess it replaced: it looks like a question and behaves like an
+answer. Parts *ahead* of the cursor stay out either way — they are unpresented drafts, so the owner
+cannot have meant one. Nothing has moved and nothing has changed while the picker is on screen; say
+so, and stay where you are until they point.
+
 **`back` leaves the parts in between exactly as they are** — confirmed, and still confirmed. Going
 5→2 does not un-confirm 3 and 4; they are re-drafted only if the ripple from part 2 actually reaches
 them. Don't discard them, don't de-confirm them, and don't re-present them on the way back down. When
@@ -191,10 +206,16 @@ anything longer than one character for meaning rather than for its first letter.
 **Route only when the naming resolves to exactly one part.** That is what "establishes a destination"
 means throughout this skill — one unambiguous referent, not the owner's confirmation. "change the
 quality bar" names part 2 and nothing else, so route it. Naming loose enough that two parts could
-answer to it is *not* established: print the `back` picker and let them point, rather than committing
-to your own parse and announcing a guess as though it were a fact. And when the part they name is the
-one already on screen, there is nothing to route — make the change where you are, with no
-announcement about going anywhere.
+answer to it is *not* established: print the **candidate picker** (below) and let them point, rather
+than committing to your own parse and announcing a guess as though it were a fact. And when the
+naming resolves to the part already on screen, there is nothing to route — make the change where you
+are, with no announcement about going anywhere.
+
+**Resolution comes first.** The on-screen rule is not a shortcut past the ambiguity test — it applies
+only once the naming has resolved. A phrase that could mean the part on screen *or* an earlier one
+has not resolved, so it gets the candidate picker, with the on-screen part listed among the
+candidates. Deciding it must mean the part in front of you because that is where you happen to be
+standing is the same announced guess by a quieter route.
 
 When it does resolve, announce the move in one line before you make it, the same way every time:
 
@@ -403,7 +424,9 @@ Those files resume normally.
 - Refusing a request whose destination and edit you are both holding → that is a tool correcting the
   owner's grammar. Route it and say so.
 - Routing on naming that two parts could answer to → an announced guess is still a guess. Print the
-  picker instead.
+  candidate picker instead.
+- A candidate picker that leaves out the part on screen → `back`'s backward-only rule leaking into a
+  question that isn't about going back. List every part that answers to the phrasing.
 - Inventing the edit when prose named a destination but carried no content → route, then ask.
 - Returning to the frontier while a stale part sits unresolved behind it → stale first, always.
 - Reading ambiguous prose ("cancel this") as `abandon` without asking → generous inference is right

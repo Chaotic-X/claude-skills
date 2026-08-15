@@ -1,5 +1,28 @@
 # Changelog — my-goal
 
+## 1.2.1
+
+**Candidate picker.** Disambiguation reused the `back` picker, which by definition lists only the
+parts *behind* the cursor. So when an ambiguous naming could mean the part on screen — frequently the
+strongest reading — the picker meant to resolve the ambiguity structurally could not offer the likely
+answer, and steered toward an earlier part instead. A picker whose options exclude the right one
+looks like a question and behaves like an answer.
+
+- **The candidate picker is now distinct from the `back` picker.** `back` moves backward, so its
+  picker stays backward-only. Disambiguation asks *which part did you mean*, so it lists every part
+  that answers to the phrasing, wherever it sits, and marks the current one:
+  `did you mean: (2) quality bar · (5) verification loop — on screen now`. Parts *ahead* of the
+  cursor stay out either way — they are unpresented drafts, so the owner cannot have meant one.
+- **Resolution now precedes the on-screen rule.** The two were unordered, and both fired on the same
+  input: "the named part is the one on screen, so change it here" and "two parts could answer to
+  this, so print the picker." Resolution comes first — deciding a phrase must mean the part in front
+  of you because that is where you are standing is the same announced guess by a quieter route.
+- **Red flag added** for a candidate picker that omits the part on screen: `back`'s backward-only
+  rule leaking into a question that is not about going back.
+
+Found by behavioural runs against 1.2.0 — six scripted walkthroughs, one per routing rule. The
+routing rules themselves passed; the picker they delegate to did not.
+
 ## 1.2.0
 
 **Walkthrough controls.** The confirm menu gained single-letter shortcuts, `restart`, and
