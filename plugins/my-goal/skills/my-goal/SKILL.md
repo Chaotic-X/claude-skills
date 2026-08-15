@@ -196,7 +196,9 @@ so, and stay where you are until they point.
 5→2 does not un-confirm 3 and 4; they are re-drafted only if the ripple from part 2 actually reaches
 them. Don't discard them, don't de-confirm them, and don't re-present them on the way back down. When
 the ripple finishes, the cursor returns to the frontier — the furthest part the owner had reached —
-not to the part they backed into.
+not to the part they backed into. **Record the frontier in the session file before you move**, in the
+`frontier` field; it is the only thing that knows where to come back to, and a crash mid-detour that
+never wrote it strands the owner at the detour with the rest of the walkthrough looking finished.
 
 **A lone `c` is scoped to the part on screen; prose that names another part is routed.** The key
 itself names nothing, so the part in front of them is the only thing it could mean — a bare `c` never
@@ -225,18 +227,20 @@ Then apply the change there and ripple forward. **If the prose named a destinati
 edit** — "change the resources part", and nothing else — route and announce, then ask what should
 change once you are there. Never invent the edit to save a turn.
 
-Afterward the cursor returns to the frontier, the furthest part the owner had reached — but **stale
-parts come first.** Anything the ripple invalidated is re-presented and resolved before the frontier
-is restored; you cannot be standing at the frontier with a broken part behind you. Announce, never
-teleport silently, and never make the owner rephrase something you already understood.
+Afterward the cursor returns to the frontier — the `frontier` field, read from the file rather than
+recalled — but **stale parts come first.** Anything the ripple invalidated is re-presented and
+resolved before the frontier is restored; you cannot be standing at the frontier with a broken part
+behind you. Announce, never teleport silently, and never make the owner rephrase something you
+already understood.
 
 **Fatigue valve:** "rest looks good", "skip to the end", or anything similar batch-confirms
 everything remaining — jump straight to Phase 4 with zero further questions.
 
 **Write the session file after every state change** (schema below) — a confirmed part, a `back`, a
-restart, a pause, an abandon — before presenting anything else. Open it in Phase 1 with the ramble,
-and write it again at the end of Phase 2 with the drafts and the `## Verified` block, so a crash
-before the first confirmation still leaves something to resume from. The file is the source of truth
+restart, a pause, an abandon, any move of `position` or `frontier` — before presenting anything
+else. Open it in Phase 1 with the ramble, and write it again at the end of Phase 2 with the drafts
+and the `## Verified` block, so a crash before the first confirmation still leaves something to
+resume from. The file is the source of truth
 for `back`, `pause`, `restart`, `resume`, and the ripple diff — not your memory of the
 conversation.
 
@@ -251,8 +255,8 @@ file:
 1. Append the old ramble to a `## Superseded rambles` section with a timestamp. Never delete it — it
    is how a warm resume months later understands what changed and why.
 2. Replace `## Ramble` with the new statement, verbatim.
-3. Clear every part, reset `position: 1`, and keep the `## Verified` block only where the checks
-   still apply to the new premise — re-run anything you are unsure of.
+3. Clear every part, reset both `position: 1` and `frontier: 1`, and keep the `## Verified` block
+   only where the checks still apply to the new premise — re-run anything you are unsure of.
 4. Re-slug and rename the file if the deliverable changed. Same goal, new premise, one file.
 
 Then re-draft all 7 from scratch and present 1/7. A restart is not a change and does not ripple —
@@ -334,7 +338,8 @@ goal: comfyui-style-sheets
 started: 2026-08-10T16:52-06:00
 updated: 2026-08-10T17:20-06:00
 status: in-progress          # in-progress | paused | delivered | abandoned
-position: 5                  # part currently awaiting confirm
+position: 5                  # part currently awaiting confirm — may sit behind the frontier
+frontier: 5                  # furthest part reached; where the cursor returns after a detour
 abandoned:                   # datestamp, only when status is abandoned
 ---
 
@@ -362,10 +367,29 @@ Change: "ToT not SoO" -> premise fixed, rippled to 5
 
 Per-part status is one of `awaiting`, `confirmed`, `confirmed: changed`, `stale`.
 
+**`position` and `frontier` are different numbers, and both are load-bearing.** `position` is where
+the cursor is now; `frontier` is the furthest part the owner ever reached. Going forward they move
+together — confirming a part advances both. A `back`, or a change routed to an earlier part, moves
+`position` backward and **leaves `frontier` where it was**. That is the whole reason it exists: it is
+what the cursor returns to once the detour and any stale parts resolve, and without it on disk the
+return target lives only in your memory of the conversation, which this skill does not trust. Write
+both on every state change. `frontier` is a high-water mark, never a second cursor — it decreases
+only on a `restart`, which resets both to 1. `frontier` below `position` is always a bug.
+
+**Resuming mid-detour.** A file whose `position` is behind its `frontier` was interrupted partway
+through a `back` or a routed change. Say so on resume rather than silently treating the detour as the
+owner's place in the walkthrough — they are at `position`, on their way back to `frontier`, and any
+part still marked `stale` is resolved before the frontier is restored.
+
 **Reading older files.** Sessions written before v1.2.0 may carry `confirmed: adjusted` (from when
 `adjust` was a separate verb) or `confirmed: corrected` (from when `change` was called `correct`).
 Read either as `confirmed` and carry on — do not rewrite the marker, and do not treat it as an error.
 Those files resume normally.
+
+Files written before v1.2.2 carry no `frontier`. Read it as equal to `position` and write the field
+on the next state change. A detour that was in flight when such a file was last written cannot be
+recovered — nothing recorded where it was headed — so resume at `position` and say that the frontier
+was unknown rather than inventing one.
 
 ## The 7-part anatomy
 
@@ -429,6 +453,8 @@ Those files resume normally.
   question that isn't about going back. List every part that answers to the phrasing.
 - Inventing the edit when prose named a destination but carried no content → route, then ask.
 - Returning to the frontier while a stale part sits unresolved behind it → stale first, always.
+- Moving the cursor backward without writing `frontier` first → the return target now exists only in
+  this conversation, and the file is supposed to be the thing that survives losing it.
 - Reading ambiguous prose ("cancel this") as `abandon` without asking → generous inference is right
   everywhere else and wrong on the one irreversible verb.
 - Rippling a part that doesn't depend on what changed → a wording tweak costing six re-drafts is how

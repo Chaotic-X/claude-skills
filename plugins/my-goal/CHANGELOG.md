@@ -1,5 +1,33 @@
 # Changelog — my-goal
 
+## 1.2.2
+
+**`frontier` is now a field.** The walkthrough returns the cursor to the frontier — the furthest part
+the owner reached — after a `back` or a routed change. The skill also declares the session file the
+source of truth for `back`, `pause`, `restart` and `resume`, "not your memory of the conversation."
+But the schema had nowhere to record the frontier, so it lived only in the conversation. A crash
+partway through a detour restored `position`, which is the *detour target*, and the walkthrough came
+back looking finished with the owner stranded at the part they had stepped back to.
+
+- **`frontier` added to the session-file frontmatter**, alongside `position`. They move together
+  going forward; a `back` or a routed change moves `position` backward and leaves `frontier` put.
+  It is a high-water mark, not a second cursor — it decreases only on `restart`, which resets both
+  to 1, and `frontier` below `position` is always a bug.
+- **The write-trigger list gained "any move of `position` or `frontier`."** This is the fix that
+  actually closes the hole: the old list named a confirmed part, a `back`, a restart, a pause and an
+  abandon, so a backward cursor move had no trigger obliging it to be written at all.
+- **Resume announces a detour** rather than silently treating it as the owner's place: a file whose
+  `position` sits behind its `frontier` was interrupted mid-detour, and stale parts still resolve
+  before the frontier is restored.
+- **Pre-1.2.2 files** carry no `frontier`; read it as equal to `position`. An in-flight detour in
+  such a file is unrecoverable — nothing recorded where it was headed — so resume at `position` and
+  say the frontier was unknown rather than inventing one.
+- **Red flag added** for moving the cursor backward without writing `frontier` first.
+
+Found by the same behavioural runs that produced 1.2.1: two agents independently invented a frontier
+field (an inline comment, an HTML comment) because the schema the skill told them to trust could not
+answer the question the skill told them to ask it.
+
 ## 1.2.1
 
 **Candidate picker.** Disambiguation reused the `back` picker, which by definition lists only the
