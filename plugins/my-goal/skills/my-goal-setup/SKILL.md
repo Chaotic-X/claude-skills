@@ -18,38 +18,52 @@ Never write config into the plugin directory.
 
 ## Step 1 — Detect
 
-Run these. They are all read-only and fast. Missing results are fine — report what you found, don't
-stall on what you didn't.
+**Establish the platform first.** Every path below depends on it, and two of the three platforms are
+not macOS. Your harness reports the OS in its environment context — use that. Otherwise infer it from
+which home directory exists: `/Users/<name>` macOS · `/home/<name>` Linux · `C:\Users\<name>` Windows.
+
+| | macOS | Linux | Windows |
+|---|---|---|---|
+| Claude config | `~/.claude/` | `~/.claude/` | `%USERPROFILE%\.claude\` |
+| Obsidian config | `~/Library/Application Support/obsidian/obsidian.json` | `~/.config/obsidian/obsidian.json` | `%APPDATA%\obsidian\obsidian.json` |
+| Big / external storage | `/Volumes/*` | `/media/*`, `/mnt/*` | drive letters past `C:` |
+
+**Read config files with your own file tools. Do not shell out to parse them.** `jq` ships with
+neither macOS nor Windows, so a `jq` pipeline returns nothing on a stock machine, writes a thin
+config, and reports no error — the worst possible outcome, because it looks like it worked. Read the
+JSON and pull the keys yourself:
+
+- `~/.claude.json` → `mcpServers` keys — the MCP servers they have configured
+- the Obsidian config **for their platform** (table above) → `vaults[].path`
+- `~/.claude/plugins/installed_plugins.json` → `plugins` keys — what else they run
+- `~/.claude/skills/` → directory listing — their personal skills
+- `~/.claude/CLAUDE.md` → read it; it often states how they want to be addressed and how they work
+
+Also check the live session's own tool list for connected MCPs — more current than the config file.
+
+**Candidate working directories** — list what actually exists, don't assume: `~/Projects`,
+`~/Developer`, `~/Code`, `~/src`, `~/Documents`, plus the platform's big-storage location.
+
+**Binaries are the one probe that genuinely needs a shell.** Use the form matching the platform:
 
 ```bash
-# Platform + identity
-uname -s
-git config --global user.name
-
-# MCP servers (user scope)
-jq -r '.mcpServers | keys[]' ~/.claude.json 2>/dev/null
-
-# Local binaries worth naming in a goal prompt
+# macOS / Linux / WSL / Git Bash
 for b in ffmpeg yt-dlp gs pandoc magick convert rg jq sqlite3 python3 node; do
   command -v "$b" >/dev/null 2>&1 && echo "$b"
 done
-
-# Obsidian vaults, if any (authoritative list, no filesystem crawl)
-jq -r '.vaults | to_entries[] | .value.path' \
-  ~/Library/Application\ Support/obsidian/obsidian.json 2>/dev/null
-
-# Candidate working directories
-ls -d ~/Projects ~/Developer ~/Code ~/src ~/Documents 2>/dev/null
-ls /Volumes 2>/dev/null
-
-# What else they already have installed
-ls ~/.claude/skills 2>/dev/null
-jq -r '.plugins | keys[]' ~/.claude/plugins/installed_plugins.json 2>/dev/null
 ```
 
-Also read `~/.claude/CLAUDE.md` if it exists — it often states how they want to be addressed and how
-they prefer to work. And check the live session's own tool list for connected MCPs, which is more
-current than the config file.
+```powershell
+# Windows PowerShell — Claude Code's shell when Git for Windows is absent
+foreach ($b in 'ffmpeg','yt-dlp','gs','pandoc','magick','rg','jq','sqlite3','python','node') {
+  if (Get-Command $b -ErrorAction SilentlyContinue) { $b }
+}
+```
+
+**Say the platform and any gap out loud before you ask anything.** One line is enough: *"Detected
+Windows; found 3 MCP servers and one Obsidian vault; couldn't probe local binaries — no bash
+available."* Missing results are fine. **Silently** missing results are not: a thin config the owner
+knows about is fixable, a thin config that looked successful is not.
 
 **If `~/.claude/my-goal/environment.md` already exists**, read it first. This is a reconfigure, not a
 fresh install: carry forward everything they already set, present current values as the defaults, and
@@ -125,7 +139,8 @@ third one is fixed by a bigger model.
 
 ## Step 4 — Write, summarize, verify
 
-1. `mkdir -p ~/.claude/my-goal` and write `environment.md`.
+1. Create `~/.claude/my-goal/` and write `environment.md` **with your file tools** — `mkdir -p` is
+   POSIX-only and fails in PowerShell. On Windows that path is `%USERPROFILE%\.claude\my-goal\`.
 2. Summarize in plain language what you recorded — the name, the two directories, the tier, the tools
    you found, and that abandoned goals are kept 30 days by default. Six lines, not a wall.
 3. Tell them the file is theirs to edit freely, that `/my-goal` never needs changing when it does,
@@ -135,6 +150,11 @@ third one is fixed by a bigger model.
 
 ## Red flags
 
+- Parsing config by shelling out to `jq` → it is on neither a stock macOS nor Windows. Read the file
+  with your own tools. A `jq` miss is silent, which makes it worse than a crash.
+- Hardcoding `~/Library/Application Support` or `/Volumes` → macOS-only. Branch per the Step 1 table.
+- Reporting a successful setup without naming the platform → the owner cannot tell a real detection
+  from a total miss, and neither can the next session.
 - Asking for a path you could have detected → detect, then confirm.
 - Writing config into the plugin directory → it dies on update. `~/.claude/my-goal/` only.
 - Shipping both tier branches with "pick one" → you asked the tier question; act on the answer.

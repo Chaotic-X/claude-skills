@@ -1,5 +1,35 @@
 # Changelog — my-goal
 
+## 1.3.0
+
+**Setup detection was macOS-only, and it failed silently.** `my-goal-setup` Step 1 shelled out to
+`uname`, `jq`, `command -v`, `ls /Volumes` and `~/Library/Application Support/obsidian/obsidian.json`.
+Only the first two of those exist off macOS, and the step's own instruction — *"Missing results are
+fine"* — meant nothing errored. A Windows or Linux owner got a threadbare `environment.md` that looked
+like a successful install, and `/my-goal` then produced generic prompts forever with no visible cause.
+
+`jq` made it worse than a platform bug: it ships with **neither macOS nor Windows**, so a stock Mac
+with no Homebrew already detected zero MCP servers and zero Obsidian vaults.
+
+- **Config is now read with file tools, not parsed by shelling out.** `~/.claude.json`,
+  `installed_plugins.json` and the Obsidian config are JSON the agent can read directly. No `jq`, no
+  shell, no silent miss. Verified on macOS to return results identical to the old `jq` pipeline.
+- **Platform table replaces hardcoded macOS paths** — Claude config, Obsidian config and
+  big/external storage, each given for macOS, Linux and Windows. Platform is established first,
+  because every other path depends on it.
+- **The binary probe — the one step that genuinely needs a shell — is branched**, with a PowerShell
+  form alongside the POSIX one. That is Claude Code's shell on native Windows when Git for Windows
+  is absent.
+- **Detection now announces the platform and any gap before asking anything.** A thin config the
+  owner knows about is fixable; a thin config that looked successful is not.
+- **`mkdir -p` dropped from Step 4** — POSIX-only, fails in PowerShell. The directory is created with
+  file tools.
+- **Three red flags added** for `jq` parsing, hardcoded macOS paths, and reporting success without
+  naming the platform.
+
+No behavioural change on macOS. Windows and Linux go from silently degraded to supported.
+Windows-in-practice remains unverified — no Windows machine was available to test on.
+
 ## 1.2.2
 
 **`frontier` is now a field.** The walkthrough returns the cursor to the frontier — the furthest part
